@@ -14,6 +14,7 @@
 
 // #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_prelude.h"
+#include "esp_adc/adc_continuous.h"
 #include "as5600.h"
 
 #define MCPWM0 0 
@@ -49,6 +50,11 @@ private:
     mcpwm_oper_handle_t oper1 = NULL;
     mcpwm_oper_handle_t oper2 = NULL;
     mcpwm_gen_handle_t generator_a = NULL, generator_b = NULL, generator_c = NULL;
+
+    //adc
+    adc_continuous_handle_t adc_handle;
+    
+    void initADC();
     void applyPWM(float u, float v, float w);
     void focControl(float Uq, float Ud);
     void SetRotateVoltage(float V);

@@ -73,7 +73,7 @@ void Debug_task(void * arg)
         yaw.update();
         // ESP_LOGI(tag, "rxdata = %d",rxdata);
         int64_t duration = esp_timer_get_time() - start;
-        if(duration > 2000) { // 超过 2ms
+        if(duration > 1000) { // 超过 2ms
             ESP_LOGW(tag, "Update exceeded: %lld us", duration);
         }
         

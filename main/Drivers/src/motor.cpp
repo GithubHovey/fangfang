@@ -121,7 +121,7 @@ void Motor::update() {
     // ESP_ERROR_CHECK(mcpwm_timer_get_count(mcpwm_timer, &count));
     // ESP_LOGI("Motor", "Timer count: %lu", count);
     // focControl(1.0f,0);
-    SetRotateVoltage(6.0f);
+    SetRotateVoltage(12.0f);
 }
 void Motor::debug() {
     int level_a = gpio_get_level((gpio_num_t)pwm_a);
