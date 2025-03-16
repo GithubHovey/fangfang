@@ -14,7 +14,7 @@
 
 // #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_prelude.h"
-#include "esp_adc/adc_continuous.h"
+#include "esp_adc/adc_oneshot.h"
 #include "as5600.h"
 
 #define MCPWM0 0 
@@ -52,9 +52,16 @@ private:
     mcpwm_gen_handle_t generator_a = NULL, generator_b = NULL, generator_c = NULL;
 
     //adc
-    adc_continuous_handle_t adc_handle;
-    
+    adc_oneshot_unit_handle_t adc_handle = NULL;
+    adc_cali_handle_t adc_cali1_handle = NULL;
+    adc_cali_handle_t adc_cali2_handle = NULL;
+    bool adc_cali1_enable = false;
+    bool adc_cali2_enable = false;
+    int adc_rawdata;
+    int voltage;
+
     void initADC();
+    bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
     void applyPWM(float u, float v, float w);
     void focControl(float Uq, float Ud);
     void SetRotateVoltage(float V);

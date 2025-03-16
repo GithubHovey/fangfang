@@ -67,10 +67,11 @@ void Debug_task(void * arg)
     gpio_dump_io_configuration(stdout, (1ULL << 6) | (1ULL << 7) | (1ULL << 15) | (1ULL << 16) | (1ULL << 17));
     vTaskDelay(1000);   
     for(;;)
-    {   vTaskDelayUntil(&xLastWakeTime_t, 2);
+    {   vTaskDelayUntil(&xLastWakeTime_t, 500);
         // rxdata = encoder.getRawAngle();
         int64_t start = esp_timer_get_time();
-        yaw.update();
+        // yaw.update();
+        yaw.debug();
         // ESP_LOGI(tag, "rxdata = %d",rxdata);
         int64_t duration = esp_timer_get_time() - start;
         if(duration > 1000) { // 超过 2ms
