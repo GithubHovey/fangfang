@@ -208,10 +208,10 @@ void Motor::debug() {
 void Motor::applyPWM(float u, float v, float w) {
     // Apply PWM signals to the motor phases
     // Note: This is a placeholder. You need to map u, v, w to the actual PWM duty cycles.
-    float _u = limit((u+max_voltage/2)/(2*max_voltage) ,0.0f,1.0f); //e.g 6v : (6+12)/(2*12) = 75%
-    float _v = limit((v+max_voltage/2)/(2*max_voltage) ,0.0f,1.0f); //e.g -12v : (-12+12)/(2*12) = 0%
-    float _w = limit((w+max_voltage/2)/(2*max_voltage) ,0.0f,1.0f); //e.g 0v : (0+12)/(2*12) = 50%
-
+    float _u = limit((u+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 6v : (6+12)/(2*12) = 75%
+    float _v = limit((v+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g -12v : (-12+12)/(2*12) = 0%
+    float _w = limit((w+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 0v : (0+12)/(2*12) = 50%
+    ESP_LOGI("Motor", "u=%f v=%f w=%f",_u,_v,_w);
     if(!comparator_a)
     {
         ESP_LOGE("Motor", "cmpr is null;");
@@ -232,8 +232,9 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     // This is a simplified example, actual FOC implementation will be more complex
     // Get current rotor position from encoder
     uint16_t raw_angle = encoder.getRawAngle();
-    float rotor_angle = (raw_angle / 4096.0f) * 2 * M_PI; // Convert to radians
+    float rotor_angle = (raw_angle / 4096.0f) * 2.0f * M_PI; // Convert to radians
     float angle_el = rotor_angle * pole_pairs;
+    angle_el = fmod(angle_el, 2.0f * M_PI);
     // Calculate Clarke and Park transforms
     // Placeholder for actual FOC logic
     /*park transform*/
@@ -245,6 +246,7 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     float v = -0.5f * u_alpha + (sqrt(3) / 2.0f) * u_beta; // V phase
     float w = -0.5f * u_alpha - (sqrt(3) / 2.0f) * u_beta; // W phase
     // Apply PWM signals
+    
     applyPWM(u, v, w);
 }
 void Motor::SetRotateVoltage(float V)

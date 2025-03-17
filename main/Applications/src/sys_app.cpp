@@ -1,6 +1,7 @@
 #include "../include/sys_init.h"
 #include "../include/sys_internal.h"
 #include "motor.h"
+#include "utility.h"
 // #include "driver/gpio.h"
 #define CPU0 0
 #define CPU1 1
@@ -21,6 +22,7 @@ void AppInit()
 #if USE_NETWORK == 1
     xTaskCreatePinnedToCore(NetworkTask,"app.network",3584,NULL,5,&network_handle,CPU1);
 #endif 
+    // xTaskCreatePinnedToCore(vofaTask,"app.vofa",3584,NULL,5,&vofa_task_handle,CPU0);
     // xTaskCreatePinnedToCore(Main_task,"app.main",3584,NULL,5,&main_task_handle,CPU1);
     xTaskCreatePinnedToCore(Debug_task,"app.debug",3584,NULL,5,&debug_task_handle,CPU0);
 #ifdef USE_ASR
@@ -62,6 +64,7 @@ void Debug_task(void * arg)
     // AS5600 encoder(I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7);
     Motor yaw(MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,
              I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7 ,7);
+    
     uint16_t rxdata = 0;
     yaw.init();
     gpio_dump_io_configuration(stdout, (1ULL << 6) | (1ULL << 7) | (1ULL << 15) | (1ULL << 16) | (1ULL << 17));
@@ -70,11 +73,11 @@ void Debug_task(void * arg)
     {   vTaskDelayUntil(&xLastWakeTime_t, 500);
         // rxdata = encoder.getRawAngle();
         int64_t start = esp_timer_get_time();
-        // yaw.update();
-        yaw.debug();
+        yaw.update();
+        // yaw.debug();
         // ESP_LOGI(tag, "rxdata = %d",rxdata);
         int64_t duration = esp_timer_get_time() - start;
-        if(duration > 1000) { // 超过 2ms
+        if(duration > 2000) { // 超过 2ms
             ESP_LOGW(tag, "Update exceeded: %lld us", duration);
         }
         
