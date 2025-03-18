@@ -211,7 +211,7 @@ void Motor::applyPWM(float u, float v, float w) {
     float _u = limit((u+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 6v : (6+12)/(2*12) = 75%
     float _v = limit((v+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g -12v : (-12+12)/(2*12) = 0%
     float _w = limit((w+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 0v : (0+12)/(2*12) = 50%
-    ESP_LOGI("Motor", "u=%f v=%f w=%f",_u,_v,_w);
+    // ESP_LOGI("Motor", "u=%f v=%f w=%f",_u,_v,_w);
     if(!comparator_a)
     {
         ESP_LOGE("Motor", "cmpr is null;");
@@ -242,12 +242,12 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     float u_beta = Ud*sin(angle_el)+Uq*cos(angle_el);
     
     /*clarke transform*/
-    float u = u_alpha; // U phase
-    float v = -0.5f * u_alpha + (sqrt(3) / 2.0f) * u_beta; // V phase
-    float w = -0.5f * u_alpha - (sqrt(3) / 2.0f) * u_beta; // W phase
+    Ua = u_alpha; // U phase
+    Ub = -0.5f * u_alpha + (sqrt(3) / 2.0f) * u_beta; // V phase
+    Uc = -0.5f * u_alpha - (sqrt(3) / 2.0f) * u_beta; // W phase
     // Apply PWM signals
     
-    applyPWM(u, v, w);
+    applyPWM(Ua, Ub, Uc);
 }
 void Motor::SetRotateVoltage(float V)
 {

@@ -16,7 +16,7 @@
 #include "driver/mcpwm_prelude.h"
 #include "esp_adc/adc_oneshot.h"
 #include "as5600.h"
-
+#include "utility.h"
 #define MCPWM0 0 
 #define MCPWM1 1
 
@@ -31,8 +31,10 @@ public:
     void setTorque(float torque); // Torque in Nm
     void update(); // Update FOC control loop
     void debug(void);
+    float Ua,Ub,Uc;
 
 private:
+
     uint8_t pole_pairs;
     int mcpwm_unit;
     mcpwm_timer_handle_t mcpwm_timer;
@@ -46,6 +48,7 @@ private:
     float target_speed;
     float current_torque;
     float target_torque;
+    
 
     mcpwm_oper_handle_t oper1 = NULL;
     mcpwm_oper_handle_t oper2 = NULL;

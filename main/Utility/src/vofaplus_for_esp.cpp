@@ -23,7 +23,7 @@ void Vofa::begin(int baud_rate) {
     // UART配置
     uart_config_t uart_config = {
         .baud_rate = baud_rate,
-        .data_bits = UART_DATA_8_BITS,
+        .data_bits = UART_DATA_8_BITS, 
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
@@ -46,3 +46,18 @@ void Vofa::sendData(float data[], int length) {
     uint8_t end_marker[] = {0x00, 0x00, 0x80, 0x7F};
     uart_write_bytes(uart_num, (const char*)end_marker, sizeof(end_marker));
 }
+/*demo:*/
+#if 0 
+#include "Vofa.h"
+
+extern "C" void app_main() {
+    Vofa vofa(UART_NUM_1, GPIO_NUM_17, GPIO_NUM_16); // 使用UART1，TX=GPIO17，RX=GPIO16
+    vofa.begin(115200); // 初始化UART通信，波特率为115200
+
+    while (1) {
+        float data[] = {1.23, 4.56, 7.89}; // 要发送的数据
+        vofa.sendData(data, 3); // 发送数据
+        vTaskDelay(1000 / portTICK_PERIOD_MS); // 每隔1秒发送一次
+    }
+}
+#endif

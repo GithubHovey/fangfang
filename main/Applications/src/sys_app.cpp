@@ -54,30 +54,35 @@ void Main_task(void * arg)
         vTaskDelay(10000);
     }
 }
-
+Motor yaw(MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,
+             I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7 ,7);
+Vofa vofa(UART_NUM_1,4,5);
+    
 void Debug_task(void * arg)
 {
     TickType_t xLastWakeTime_t;
     xLastWakeTime_t = xTaskGetTickCount();
     const char* tag = pcTaskGetName(xTaskGetCurrentTaskHandle());
     ESP_LOGI(tag, "%s is created.",tag);
-    // AS5600 encoder(I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7);
-    Motor yaw(MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,
-             I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7 ,7);
     
+    vofa.begin(115200);
     uint16_t rxdata = 0;
     yaw.init();
+    
     gpio_dump_io_configuration(stdout, (1ULL << 6) | (1ULL << 7) | (1ULL << 15) | (1ULL << 16) | (1ULL << 17));
     vTaskDelay(1000);   
     for(;;)
-    {   vTaskDelayUntil(&xLastWakeTime_t, 500);
+    {   vTaskDelayUntil(&xLastWakeTime_t, 10);
         // rxdata = encoder.getRawAngle();
         int64_t start = esp_timer_get_time();
         yaw.update();
         // yaw.debug();
         // ESP_LOGI(tag, "rxdata = %d",rxdata);
         int64_t duration = esp_timer_get_time() - start;
-        if(duration > 2000) { // 超过 2ms
+
+        float data[] = {yaw.Ua, yaw.Ub, yaw.Uc}; // 要发送的数据
+        vofa.sendData(data, 3); // 发送数据
+        if(duration > 3000) { // 超过 2ms
             ESP_LOGW(tag, "Update exceeded: %lld us", duration);
         }
         
