@@ -12,35 +12,24 @@
 #ifndef __VOFAPULS_FOR_ESP_H
 #define __VOFAPULS_FOR_ESP_H
 
-/* Files includes  -----------------------------------------------------------*/
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 #include "driver/uart.h"
 #include "esp_log.h"
-/* Defines -------------------------------------------------------------------*/
 
-/* Variables -----------------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+// 初始化 Vofa+ 的 UART
+void vofa_init(uart_port_t uart_num, int tx_pin, int rx_pin, int baud_rate);
 
-class Vofa {
-public:
-    Vofa(uart_port_t uart_num, int tx_pin, int rx_pin); // 构造函数，传递UART端口号和引脚
-    ~Vofa(); // 析构函数
-    void begin(int baud_rate); // 初始化UART通信
-    void sendData(float data[], int length); // 发送数据到Vofa+
-
-private:
-    uart_port_t uart_num; // UART端口号
-    int tx_pin; // TX引脚
-    int rx_pin; // RX引脚
-};
-
-
+// 发送数据到 Vofa+（FireWater 协议）
+void vofa_send_firewater(uart_port_t uart_num, float data[], int length);
+void vofa_send_justfloat(uart_port_t uart_num, float data[], int length);
+void vofa_printf(uart_port_t uart_num, const char* format, ...);
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // VOFA_H

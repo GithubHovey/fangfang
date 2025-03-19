@@ -10,6 +10,7 @@
 #include "motor.h"
 #include "esp_log.h"
 #include <cmath>
+#include "utility.h"
 
 #define limit(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 #define PWM_CYCLE 1000 /*us*/
@@ -107,6 +108,9 @@ void Motor::init() {
         ESP_LOGE("Motor", "Failed to initialize encoder");
     }
     initADC();
+#ifdef USE_VOFA
+    vofa_init(UART_NUM_1, GPIO_NUM_4, GPIO_NUM_5, 115200);
+#endif
 }
 
 
@@ -185,10 +189,6 @@ void Motor::setTorque(float torque) {
 }
 
 void Motor::update() {
-    // uint32_t count = 0;
-    // ESP_ERROR_CHECK(mcpwm_timer_get_count(mcpwm_timer, &count));
-    // ESP_LOGI("Motor", "Timer count: %lu", count);
-    // focControl(1.0f,0);
     SetRotateVoltage(12.0f);
 }
 void Motor::debug() {
@@ -212,12 +212,17 @@ void Motor::applyPWM(float u, float v, float w) {
     float _v = limit((v+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g -12v : (-12+12)/(2*12) = 0%
     float _w = limit((w+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 0v : (0+12)/(2*12) = 50%
     // ESP_LOGI("Motor", "u=%f v=%f w=%f",_u,_v,_w);
+#ifdef USE_VOFA
+    float vofadata[3] = {_u, _v, _w};
+    // vofa_printf(UART_NUM_1, "%.2f,%.2f,%.2f", _u, _v, _w);
+    vofa_send_firewater(UART_NUM_1, vofadata, 3);
+#endif
     if(!comparator_a)
     {
         ESP_LOGE("Motor", "cmpr is null;");
         return ;
     }
-    if((uint32_t)(_u * PWM_CYCLE)>= PWM_CYCLE)
+    if((uint32_t)(_u * PWM_CYCLE)> PWM_CYCLE)
     {
         ESP_LOGE("Motor", ">=PWM_CYCL");
         return ;

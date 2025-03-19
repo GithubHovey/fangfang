@@ -16,7 +16,10 @@
 #include "driver/mcpwm_prelude.h"
 #include "esp_adc/adc_oneshot.h"
 #include "as5600.h"
+#define USE_VOFA
+#ifdef USE_VOFA
 #include "utility.h"
+#endif
 #define MCPWM0 0 
 #define MCPWM1 1
 
