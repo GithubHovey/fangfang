@@ -13,10 +13,10 @@
 #include "utility.h"
 
 #define limit(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
-#define PWM_CYCLE 1000 /*us*/
+#define PWM_CYCLE 500 /*0.1us */
 Motor::Motor(int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_c,
              i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin ,uint8_t pole_pairs)
-    : pole_pairs(6),mcpwm_unit(mcpwm_unit), pwm_a(pwm_a), pwm_b(pwm_b), pwm_c(pwm_c),
+    : pole_pairs(pole_pairs),mcpwm_unit(mcpwm_unit), pwm_a(pwm_a), pwm_b(pwm_b), pwm_c(pwm_c),
       encoder(i2c_port, sda_pin, scl_pin), // Initialize AS5600 encoder
       max_voltage(12.0f),current_speed(0), target_speed(0), current_torque(0), target_torque(0) {
 }
@@ -39,7 +39,7 @@ void Motor::init() {
     mcpwm_timer_config_t timer_config = {
         .group_id = mcpwm_unit,
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-        .resolution_hz = 1000000, // 1 MHz resolution
+        .resolution_hz = 10000000, // 1 MHz resolution
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
         .period_ticks = PWM_CYCLE, // 10 ms period
     };
@@ -109,7 +109,7 @@ void Motor::init() {
     }
     initADC();
 #ifdef USE_VOFA
-    vofa_init(UART_NUM_1, GPIO_NUM_4, GPIO_NUM_5, 115200);
+    vofa_init(UART_NUM_1, GPIO_NUM_38, GPIO_NUM_39, 115200);
 #endif
 }
 
@@ -189,33 +189,42 @@ void Motor::setTorque(float torque) {
 }
 
 void Motor::update() {
-    SetRotateVoltage(12.0f);
+    // SetRotateVoltage(4.0f);
+    focControl(1.0f,0);
+    // debug();
 }
 void Motor::debug() {
-    if(adc_handle == nullptr)
-    {
-        ESP_LOGE("Motor", "adc_handle is null");
-        return ;
-    }
+    // if(adc_handle == nullptr)
+    // {
+    //     ESP_LOGE("Motor", "adc_handle is null");
+    //     return ;
+    // }
     
-    ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_8, &adc_rawdata));
-    ESP_LOGI("Motor", "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, ADC_CHANNEL_8, adc_rawdata);
-    if (adc_cali1_enable) {
-    ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali1_handle, adc_rawdata, &voltage));
-    ESP_LOGI("Motor", "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, ADC_CHANNEL_8, voltage);
-    }
+    // ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_8, &adc_rawdata));
+    // ESP_LOGI("Motor", "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, ADC_CHANNEL_8, adc_rawdata);
+    // if (adc_cali1_enable) {
+    // ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali1_handle, adc_rawdata, &voltage));
+    // ESP_LOGI("Motor", "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, ADC_CHANNEL_8, voltage);
+    // }
+
+    // 手动设定三相电压（示例：旋转电压矢量）
+    static float test_angle = 0.0f;
+    Ua = sin(test_angle);
+    Ub = sin(test_angle + 2*M_PI/3);
+    Uc = sin(test_angle - 2*M_PI/3);
+    test_angle += 0.1f; // 每次控制周期增加0.1rad
+    applyPWM(Ua, Ub, Uc);
 }
 void Motor::applyPWM(float u, float v, float w) {
-    // Apply PWM signals to the motor phases
-    // Note: This is a placeholder. You need to map u, v, w to the actual PWM duty cycles.
+#if 0
     float _u = limit((u+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 6v : (6+12)/(2*12) = 75%
     float _v = limit((v+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g -12v : (-12+12)/(2*12) = 0%
     float _w = limit((w+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 0v : (0+12)/(2*12) = 50%
-    // ESP_LOGI("Motor", "u=%f v=%f w=%f",_u,_v,_w);
-#ifdef USE_VOFA
-    float vofadata[3] = {_u, _v, _w};
-    // vofa_printf(UART_NUM_1, "%.2f,%.2f,%.2f", _u, _v, _w);
-    vofa_send_firewater(UART_NUM_1, vofadata, 3);
+#else
+// 将目标电压（-6V~+6V）映射到占空比（0~1.0）
+    float _u = limit((u + 6.0f) / 12.0f,0.0f,1.0f);  // 替换原有公式
+    float _v = limit((v + 6.0f) / 12.0f,0.0f,1.0f);
+    float _w = limit((w + 6.0f) / 12.0f,0.0f,1.0f);
 #endif
     if(!comparator_a)
     {
@@ -236,10 +245,22 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     // Implement FOC control logic here
     // This is a simplified example, actual FOC implementation will be more complex
     // Get current rotor position from encoder
-    uint16_t raw_angle = encoder.getRawAngle();
-    float rotor_angle = (raw_angle / 4096.0f) * 2.0f * M_PI; // Convert to radians
-    float angle_el = rotor_angle * pole_pairs;
+
+    // uint16_t raw_angle = encoder.getRawAngle();
+    // uint16_t corrected_angle = (raw_angle + 4096 - 156) % 4096; // 156 : min offset
+    // float motor_angle = (corrected_angle / 4096.0f) * 2.0f * M_PI;
+//openloop
+    static float motor_angle = 0;
+    motor_angle += 0.001 * 10; //10rad/s
+
+
+    motor_angle = fmod(motor_angle, 2.0f * M_PI);
+    float angle_el = motor_angle * pole_pairs ; // 不再强制设为0
     angle_el = fmod(angle_el, 2.0f * M_PI);
+    // float debug_el = motor_angle*pole_pairs;
+    // angle_el = 0.0f ;
+    // ESP_LOGI("Motor", "raw_angle = %d ",raw_angle);
+
     // Calculate Clarke and Park transforms
     // Placeholder for actual FOC logic
     /*park transform*/
@@ -251,7 +272,13 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     Ub = -0.5f * u_alpha + (sqrt(3) / 2.0f) * u_beta; // V phase
     Uc = -0.5f * u_alpha - (sqrt(3) / 2.0f) * u_beta; // W phase
     // Apply PWM signals
-    
+#ifdef USE_VOFA
+    // float vofadata[3] = {_u, _v, _w};
+    // vofa_printf(UART_NUM_1, "%.2f,%.2f,%.2f", _u, _v, _w);
+    // ESP_LOGE("Motor", "angle_el=%f,u_alpha=%f,u_beta=%f,Ua=%f,Ub=%f,Uc=%f",angle_el,u_alpha,u_beta,Ua,Ub,Uc);
+    // vofa_printf(UART_NUM_1,"%d,%f,%f,%f,%f",motor_angle,Ua,Ub,Uc);
+    // vofa_send_firewater(UART_NUM_1, &raw_angle, 1);
+#endif   
     applyPWM(Ua, Ub, Uc);
 }
 void Motor::SetRotateVoltage(float V)

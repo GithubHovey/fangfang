@@ -70,15 +70,12 @@ void Debug_task(void * arg)
     gpio_dump_io_configuration(stdout, (1ULL << 6) | (1ULL << 7) | (1ULL << 15) | (1ULL << 16) | (1ULL << 17));
     vTaskDelay(1000);   
     for(;;)
-    {   vTaskDelayUntil(&xLastWakeTime_t, 10);
+    {   vTaskDelayUntil(&xLastWakeTime_t, 1);
         int64_t start = esp_timer_get_time();
         yaw.update();
 
         int64_t duration = esp_timer_get_time() - start;
-
-        // float data[] = {yaw.Ua, yaw.Ub, yaw.Uc}; // 要发送的数据
-        // vofa.sendData(data, 3); // 发送数据
-        if(duration > 3000) { // 超过 2ms
+        if(duration > 1000) { // 超过 2ms
             ESP_LOGW(tag, "Update exceeded: %lld us", duration);
         }
         
