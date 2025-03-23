@@ -7,9 +7,10 @@
 #define CPU1 1
 TaskHandle_t main_task_handle;
 TaskHandle_t debug_task_handle;
+TaskHandle_t vofa_task_handle;
 void Main_task(void * arg);
 void Debug_task(void * arg);
-
+void vofaTask(void * arg);
 void AppInit()
 {
 #if USE_SCREEN == 1

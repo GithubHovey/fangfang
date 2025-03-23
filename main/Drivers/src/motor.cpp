@@ -18,7 +18,7 @@ Motor::Motor(int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_
              i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin ,uint8_t pole_pairs)
     : pole_pairs(pole_pairs),mcpwm_unit(mcpwm_unit), pwm_a(pwm_a), pwm_b(pwm_b), pwm_c(pwm_c),
       encoder(i2c_port, sda_pin, scl_pin), // Initialize AS5600 encoder
-      max_voltage(12.0f),current_speed(0), target_speed(0), current_torque(0), target_torque(0) {
+      max_voltage(12.0f) {
 }
 
 Motor::~Motor() {
@@ -109,7 +109,7 @@ void Motor::init() {
     }
     initADC();
 #ifdef USE_VOFA
-    vofa_init(UART_NUM_1, GPIO_NUM_38, GPIO_NUM_39, 115200);
+    vofa_init(UART_NUM_1, GPIO_NUM_38, GPIO_NUM_39, 1500000);
 #endif
 }
 
@@ -215,31 +215,7 @@ void Motor::debug() {
     test_angle += 0.1f; // 每次控制周期增加0.1rad
     applyPWM(Ua, Ub, Uc);
 }
-void Motor::applyPWM(float u, float v, float w) {
-#if 0
-    float _u = limit((u+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 6v : (6+12)/(2*12) = 75%
-    float _v = limit((v+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g -12v : (-12+12)/(2*12) = 0%
-    float _w = limit((w+max_voltage)/(2*max_voltage) ,0.0f,1.0f); //e.g 0v : (0+12)/(2*12) = 50%
-#else
-// 将目标电压（-6V~+6V）映射到占空比（0~1.0）
-    float _u = limit((u + 6.0f) / 12.0f,0.0f,1.0f);  // 替换原有公式
-    float _v = limit((v + 6.0f) / 12.0f,0.0f,1.0f);
-    float _w = limit((w + 6.0f) / 12.0f,0.0f,1.0f);
-#endif
-    if(!comparator_a)
-    {
-        ESP_LOGE("Motor", "cmpr is null;");
-        return ;
-    }
-    if((uint32_t)(_u * PWM_CYCLE)> PWM_CYCLE)
-    {
-        ESP_LOGE("Motor", ">=PWM_CYCL");
-        return ;
-    }
-    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator_a, (uint32_t)(_u * PWM_CYCLE)));
-    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator_b, (uint32_t)(_v * PWM_CYCLE)));
-    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator_c, (uint32_t)(_w * PWM_CYCLE)));
-}
+
 
 void Motor::focControl(float Uq, float Ud = 0.0f) { 
     // Implement FOC control logic here
@@ -281,7 +257,54 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
 #endif   
     applyPWM(Ua, Ub, Uc);
 }
-void Motor::SetRotateVoltage(float V)
+
+void Motor::applyPWM(float u, float v, float w) {
+
+// 将目标电压（-6V~+6V）映射到占空比（0~1.0）
+    float _u = limit((u + 6.0f) / 12.0f,0.0f,1.0f);  // 替换原有公式
+    float _v = limit((v + 6.0f) / 12.0f,0.0f,1.0f);
+    float _w = limit((w + 6.0f) / 12.0f,0.0f,1.0f);
+    if(!comparator_a)
+    {
+        ESP_LOGE("Motor", "cmpr is null;");
+        return ;
+    }
+    if((uint32_t)(_u * PWM_CYCLE)> PWM_CYCLE)
+    {
+        ESP_LOGE("Motor", ">=PWM_CYCL");
+        return ;
+    }
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator_a, (uint32_t)(_u * PWM_CYCLE)));
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator_b, (uint32_t)(_v * PWM_CYCLE)));
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator_c, (uint32_t)(_w * PWM_CYCLE)));
+}
+/**
+* @brief  
+* @param  
+* @return electrical angle for FOC 
+*/
+float Motor::UpdateAngle(void)
 {
-    focControl(V);
+    uint16_t raw_angle = (encoder.getRawAngle() + 4096 - offset) % 4096;
+    int16_t err_angle = raw_angle - pre_angle;
+    if(abs(err_angle) > 3200) // 78% * 4096
+    {
+        // cnt update
+        rotate_cnt += (err_angle>0) ? -1 : 1; 
+    }
+    float ratio = (raw_angle / 4096.0f);
+    motor_angle = (ratio + (float)rotate_cnt) * 360.0f;
+    pre_angle = raw_angle;
+    float ele_angle = fmod((ratio * 2.0f * M_PI) * pole_pairs, 2.0f * M_PI);
+    return  ele_angle;
+}
+
+/**
+* @brief  
+* @param  
+* @return 
+*/
+void Motor::SetTargetAngle(float target)
+{
+
 }

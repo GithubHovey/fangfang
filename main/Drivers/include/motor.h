@@ -34,11 +34,16 @@ public:
     void setTorque(float torque); // Torque in Nm
     void update(); // Update FOC control loop
     void debug(void);
-    float Ua,Ub,Uc;
+    void SetTargetAngle(float target);
+    
 
 private:
 
     uint8_t pole_pairs;
+    int8_t rotate_cnt = 0;
+    uint16_t offset = 0;
+    uint16_t pre_angle = 0;
+    uint16_t raw_current_angle = 0;
     int mcpwm_unit;
     mcpwm_timer_handle_t mcpwm_timer;
     gpio_num_t pwm_a;
@@ -51,7 +56,8 @@ private:
     float target_speed;
     float current_torque;
     float target_torque;
-    
+    float Ua,Ub,Uc;
+    float motor_angle = 0.0f;
 
     mcpwm_oper_handle_t oper1 = NULL;
     mcpwm_oper_handle_t oper2 = NULL;
@@ -66,11 +72,15 @@ private:
     int adc_rawdata;
     int voltage;
 
+
+    
+    
+
     void initADC();
     bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
     void applyPWM(float u, float v, float w);
     void focControl(float Uq, float Ud);
-    void SetRotateVoltage(float V);
+    float UpdateAngle(void);
     
 };
 
