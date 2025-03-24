@@ -14,12 +14,23 @@
 
 #define limit(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 #define PWM_CYCLE 500 /*0.1us */
-Motor::Motor(int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_c,
-             i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin ,uint8_t pole_pairs)
-    : pole_pairs(pole_pairs),mcpwm_unit(mcpwm_unit), pwm_a(pwm_a), pwm_b(pwm_b), pwm_c(pwm_c),
-      encoder(i2c_port, sda_pin, scl_pin), // Initialize AS5600 encoder
-      max_voltage(12.0f) {
-}
+Motor::Motor(uint8_t pole_pairs, int8_t direction, float max_voltage,
+            int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_c,
+             i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin, 
+             float Kp1, float Ki1, float Kd1, float output_max1, float integral_max1,   //angle loop
+             float Kp2, float Ki2, float Kd2, float output_max2, float integral_max2,   //speed loop
+             float Kp3, float Ki3, float Kd3, float output_max3, float integral_max3    //torque loop
+             )
+    : 
+        pole_pairs(pole_pairs),direction(direction),max_voltage(max_voltage),
+        mcpwm_unit(mcpwm_unit), pwm_a(pwm_a), pwm_b(pwm_b), pwm_c(pwm_c),
+        encoder(i2c_port, sda_pin, scl_pin), // Initialize AS5600 encoder
+        loop_angle(Kp1, Ki1, Kd1, output_max1, integral_max1),
+        loop_speed(Kp2, Ki2, Kd2, output_max2, integral_max2),
+        loop_torque(Kp3,Ki3, Kd3, output_max3, integral_max3)
+        
+        {}
+
 
 Motor::~Motor() {
     // Clean up MCPWM resources if needed
@@ -189,9 +200,10 @@ void Motor::setTorque(float torque) {
 }
 
 void Motor::update() {
-    // SetRotateVoltage(4.0f);
+
+    calibration_offset();
     focControl(1.0f,0);
-    // debug();
+
 }
 void Motor::debug() {
     // if(adc_handle == nullptr)
@@ -222,16 +234,17 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     // This is a simplified example, actual FOC implementation will be more complex
     // Get current rotor position from encoder
 //as5600 get
-    uint16_t raw_angle = encoder.getRawAngle();
-    uint16_t corrected_angle = (4096 - raw_angle  + 156) % 4096; // 156 : min offset
-    float motor_angle = (corrected_angle / 4096.0f) * 2.0f * M_PI;
+    // uint16_t raw_angle = encoder.getRawAngle();
+    // uint16_t corrected_angle = (4096 - raw_angle  + 156) % 4096; // 156 : min offset
+    // float motor_angle = (corrected_angle / 4096.0f) * 2.0f * M_PI;
 //openloop
     // static float motor_angle = 0;
     // motor_angle += 0.001 * 10; //10rad/s
 
-    motor_angle = fmod(motor_angle, 2.0f * M_PI);
-    float angle_el = motor_angle * pole_pairs ; // 不再强制设为0
-    angle_el = fmod(angle_el, 2.0f * M_PI);
+    // motor_angle = fmod(motor_angle, 2.0f * M_PI);
+    // float angle_el = motor_angle * pole_pairs ; // 不再强制设为0
+    // angle_el = fmod(angle_el, 2.0f * M_PI);
+    float angle_el = UpdateAngle();
 
     /*park transform*/
     float u_alpha = Ud*cos(angle_el)-Uq*sin(angle_el);
@@ -275,7 +288,7 @@ void Motor::applyPWM(float u, float v, float w) {
 */
 float Motor::UpdateAngle(void)
 {
-    uint16_t raw_angle = (encoder.getRawAngle() + 4096 - offset) % 4096;
+    uint16_t raw_angle = (4096 + direction * (encoder.getRawAngle() - offset)) % 4096;
     int16_t err_angle = raw_angle - pre_angle;
     if(abs(err_angle) > 3200) // 78% * 4096
     {
@@ -283,7 +296,7 @@ float Motor::UpdateAngle(void)
         rotate_cnt += (err_angle>0) ? -1 : 1; 
     }
     float ratio = (raw_angle / 4096.0f);
-    motor_angle = (ratio + (float)rotate_cnt) * 360.0f;
+    current_angle = (ratio + (float)rotate_cnt) * 360.0f;
     pre_angle = raw_angle;
     float ele_angle = fmod((ratio * 2.0f * M_PI) * pole_pairs, 2.0f * M_PI);
     return  ele_angle;
@@ -296,5 +309,16 @@ float Motor::UpdateAngle(void)
 */
 void Motor::SetTargetAngle(float target)
 {
+    float out1 = loop_angle.PIDout(target,current_angle);
+    
+}
 
+/**
+* @brief  
+* @param  
+* @return 
+*/
+void Motor::calibration_offset()
+{
+    offset = 156 ;
 }

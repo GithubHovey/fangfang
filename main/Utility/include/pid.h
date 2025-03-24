@@ -19,9 +19,9 @@
 class PIDController {
 public:
     // 构造函数
-    PIDController(float Kp, float Ki, float Kd, float setpoint, 
-                  float output_min, float output_max, 
-                  float integral_min, float integral_max);
+    PIDController(float Kp, float Ki, float Kd, 
+                  float output_max, 
+                  float integral_max);
     // 设置设定值
     void SetTarget(float setpoint);
 
@@ -30,6 +30,7 @@ public:
 
     // 重置PID控制器状态
     void reset();
+    float PIDout(float target, float current);
 
 private:
     // 限幅函数

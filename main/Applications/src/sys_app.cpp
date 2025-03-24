@@ -64,11 +64,18 @@ void Debug_task(void * arg)
     xLastWakeTime_t = xTaskGetTickCount();
     const char* tag = pcTaskGetName(xTaskGetCurrentTaskHandle());
     ESP_LOGI(tag, "%s is created.",tag);
-    Motor yaw(MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,
-             I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7 ,7); 
+    Motor yaw(
+        7,    //pole_pairs
+        -1,     //dir
+        12.0f,  //vol
+        MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,//pwm
+        I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7, //as5600
+        1.33,  0,  0,  0,  0,
+        0,     0,  0,  0,  0,
+        0,     0,  0,  0,  0
+    ); 
     yaw.init();
     
-    gpio_dump_io_configuration(stdout, (1ULL << 6) | (1ULL << 7) | (1ULL << 15) | (1ULL << 16) | (1ULL << 17));
     vTaskDelay(1000);   
     for(;;)
     {   vTaskDelayUntil(&xLastWakeTime_t, 1);

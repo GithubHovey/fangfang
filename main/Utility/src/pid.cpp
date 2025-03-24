@@ -10,12 +10,12 @@
 #include "pid.h"
 
 // 构造函数
-PIDController::PIDController(float Kp, float Ki, float Kd, float setpoint, 
-                             float output_min, float output_max, 
-                             float integral_min, float integral_max)
-    : Kp(Kp), Ki(Ki), Kd(Kd), setpoint(setpoint), 
-      output_min(output_min), output_max(output_max), 
-      integral_min(integral_min), integral_max(integral_max) {
+PIDController::PIDController(float Kp, float Ki, float Kd, 
+                             float output_max, 
+                             float integral_max)
+    : Kp(Kp), Ki(Ki), Kd(Kd), 
+      output_max(output_max), 
+      integral_max(integral_max) {
 
 }
 
@@ -56,4 +56,9 @@ float PIDController::clamp(float value, float min, float max) {
         return max;
     }
     return value;
+}
+
+float PIDController::PIDout(float target, float current)
+{
+    
 }
