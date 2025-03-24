@@ -221,24 +221,18 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     // Implement FOC control logic here
     // This is a simplified example, actual FOC implementation will be more complex
     // Get current rotor position from encoder
-
-    // uint16_t raw_angle = encoder.getRawAngle();
-    // uint16_t corrected_angle = (raw_angle + 4096 - 156) % 4096; // 156 : min offset
-    // float motor_angle = (corrected_angle / 4096.0f) * 2.0f * M_PI;
+//as5600 get
+    uint16_t raw_angle = encoder.getRawAngle();
+    uint16_t corrected_angle = (4096 - raw_angle  + 156) % 4096; // 156 : min offset
+    float motor_angle = (corrected_angle / 4096.0f) * 2.0f * M_PI;
 //openloop
-    static float motor_angle = 0;
-    motor_angle += 0.001 * 10; //10rad/s
-
+    // static float motor_angle = 0;
+    // motor_angle += 0.001 * 10; //10rad/s
 
     motor_angle = fmod(motor_angle, 2.0f * M_PI);
     float angle_el = motor_angle * pole_pairs ; // 不再强制设为0
     angle_el = fmod(angle_el, 2.0f * M_PI);
-    // float debug_el = motor_angle*pole_pairs;
-    // angle_el = 0.0f ;
-    // ESP_LOGI("Motor", "raw_angle = %d ",raw_angle);
 
-    // Calculate Clarke and Park transforms
-    // Placeholder for actual FOC logic
     /*park transform*/
     float u_alpha = Ud*cos(angle_el)-Uq*sin(angle_el);
     float u_beta = Ud*sin(angle_el)+Uq*cos(angle_el);
@@ -249,11 +243,7 @@ void Motor::focControl(float Uq, float Ud = 0.0f) {
     Uc = -0.5f * u_alpha - (sqrt(3) / 2.0f) * u_beta; // W phase
     // Apply PWM signals
 #ifdef USE_VOFA
-    // float vofadata[3] = {_u, _v, _w};
-    // vofa_printf(UART_NUM_1, "%.2f,%.2f,%.2f", _u, _v, _w);
-    // ESP_LOGE("Motor", "angle_el=%f,u_alpha=%f,u_beta=%f,Ua=%f,Ub=%f,Uc=%f",angle_el,u_alpha,u_beta,Ua,Ub,Uc);
-    // vofa_printf(UART_NUM_1,"%d,%f,%f,%f,%f",motor_angle,Ua,Ub,Uc);
-    // vofa_send_firewater(UART_NUM_1, &raw_angle, 1);
+    // vofa_printf(UART_NUM_1,"%f,%f,%f,%f",motor_angle,Ua,Ub,Uc);
 #endif   
     applyPWM(Ua, Ub, Uc);
 }
