@@ -23,7 +23,7 @@ void AppInit()
 #if USE_NETWORK == 1
     xTaskCreatePinnedToCore(NetworkTask,"app.network",3584,NULL,5,&network_handle,CPU1);
 #endif 
-    // xTaskCreatePinnedToCore(vofaTask,"app.vofa",3584,NULL,5,&vofa_task_handle,CPU0);
+    xTaskCreatePinnedToCore(vofaTask,"app.vofa",3584,NULL,5,&vofa_task_handle,CPU1);
     // xTaskCreatePinnedToCore(Main_task,"app.main",3584,NULL,5,&main_task_handle,CPU1);
     xTaskCreatePinnedToCore(Debug_task,"app.debug",3584,NULL,5,&debug_task_handle,CPU0);
 #ifdef USE_ASR
@@ -56,7 +56,16 @@ void Main_task(void * arg)
     }
 }
 
-
+Motor yaw(
+        7,    //pole_pairs
+        -1,     //dir
+        12.0f,  //vol
+        MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,//pwm
+        I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7, //as5600
+        0.05,  0,  0,  3,  0,
+        0,     0,  0,  0,  0,
+        0,     0,  0,  0,  0
+    );
     
 void Debug_task(void * arg)
 {
@@ -64,16 +73,7 @@ void Debug_task(void * arg)
     xLastWakeTime_t = xTaskGetTickCount();
     const char* tag = pcTaskGetName(xTaskGetCurrentTaskHandle());
     ESP_LOGI(tag, "%s is created.",tag);
-    Motor yaw(
-        7,    //pole_pairs
-        -1,     //dir
-        12.0f,  //vol
-        MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,//pwm
-        I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7, //as5600
-        1.33,  0,  0,  0,  0,
-        0,     0,  0,  0,  0,
-        0,     0,  0,  0,  0
-    ); 
+     
     yaw.init();
     
     vTaskDelay(1000);   
@@ -87,5 +87,23 @@ void Debug_task(void * arg)
             ESP_LOGW(tag, "Update exceeded: %lld us", duration);
         }
         
+    }
+}
+/**
+* @brief  
+* @param  
+* @return 
+*/
+void vofaTask(void * arg)
+{
+    TickType_t xLastWakeTime_t;
+    xLastWakeTime_t = xTaskGetTickCount();
+    const char* tag = pcTaskGetName(xTaskGetCurrentTaskHandle());
+    ESP_LOGI(tag, "%s is created.",tag);
+    vofa_init(UART_NUM_1, GPIO_NUM_38, GPIO_NUM_39, 1500000);
+    for(;;)
+    {
+        vTaskDelayUntil(&xLastWakeTime_t, 10);
+        vofa_printf(UART_NUM_1,"%f,%f",yaw.target_angle,yaw.current_angle);
     }
 }

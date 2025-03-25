@@ -120,7 +120,7 @@ void Motor::init() {
     }
     initADC();
 #ifdef USE_VOFA
-    vofa_init(UART_NUM_1, GPIO_NUM_38, GPIO_NUM_39, 1500000);
+    
 #endif
 }
 
@@ -202,7 +202,7 @@ void Motor::setTorque(float torque) {
 void Motor::update() {
 
     calibration_offset();
-    focControl(1.0f,0);
+    SetTargetAngle(30);
 
 }
 void Motor::debug() {
@@ -309,8 +309,9 @@ float Motor::UpdateAngle(void)
 */
 void Motor::SetTargetAngle(float target)
 {
+    target_angle = target;
     float out1 = loop_angle.PIDout(target,current_angle);
-    
+    focControl(out1);
 }
 
 /**
@@ -320,5 +321,5 @@ void Motor::SetTargetAngle(float target)
 */
 void Motor::calibration_offset()
 {
-    offset = 156 ;
+    offset = 156;
 }

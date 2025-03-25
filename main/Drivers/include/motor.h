@@ -65,13 +65,15 @@ private:
     PIDController loop_angle;
     PIDController loop_speed;
     PIDController loop_torque;
-    
+public:
     float current_speed;
     float target_speed;
     float current_torque;
     float target_torque;
     float target_angle;
     float current_angle = 0.0f;
+    
+private:
     float Ua,Ub,Uc;
 
     mcpwm_oper_handle_t oper1 = NULL;

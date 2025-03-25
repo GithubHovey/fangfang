@@ -22,15 +22,12 @@ public:
     PIDController(float Kp, float Ki, float Kd, 
                   float output_max, 
                   float integral_max);
-    // 设置设定值
-    void SetTarget(float setpoint);
-
     // 计算PID输出
     float compute(float input, float dt);
 
     // 重置PID控制器状态
     void reset();
-    float PIDout(float target, float current);
+    float PIDout(float target, float current,float dt = 0.001f);
 
 private:
     // 限幅函数
@@ -39,13 +36,13 @@ private:
     float Kp;           // 比例系数
     float Ki;           // 积分系数
     float Kd;           // 微分系数
-    float setpoint;     // 设定值
     float integral      = 0.0f;     // 积分项
     float prev_error    = 0.0f;   // 上一次的误差
     float output_min;   // 输出最小值
     float output_max;   // 输出最大值
     float integral_min; // 积分项最小值
     float integral_max; // 积分项最大值
+    float dt;
 };
 
 #endif // PIDCONTROLLER_H
