@@ -62,7 +62,7 @@ Motor yaw(
         12.0f,  //vol
         MCPWM0, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,//pwm
         I2C_NUM_0,GPIO_NUM_6,GPIO_NUM_7, //as5600
-        0.05,  0,  0,  3,  0,
+        0.04,  0,  0,  3,  0,
         0,     0,  0,  0,  0,
         0,     0,  0,  0,  0
     );
