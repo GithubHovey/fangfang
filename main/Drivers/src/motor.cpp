@@ -17,6 +17,7 @@
 Motor::Motor(uint8_t pole_pairs, int8_t direction, float max_voltage,
             int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_c,
              i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin, 
+             adc_unit_t adc_unit, adc_channel_t u_chanel, adc_channel_t v_chanel, 
              float Kp1, float Ki1, float Kd1, float output_max1, float integral_max1,   //angle loop
              float Kp2, float Ki2, float Kd2, float output_max2, float integral_max2,   //speed loop
              float Kp3, float Ki3, float Kd3, float output_max3, float integral_max3    //torque loop
@@ -25,6 +26,7 @@ Motor::Motor(uint8_t pole_pairs, int8_t direction, float max_voltage,
         pole_pairs(pole_pairs),direction(direction),max_voltage(max_voltage),
         mcpwm_unit(mcpwm_unit), pwm_a(pwm_a), pwm_b(pwm_b), pwm_c(pwm_c),
         encoder(i2c_port, sda_pin, scl_pin), // Initialize AS5600 encoder
+        adc_unit(adc_unit), u_chanel(u_chanel), v_chanel(v_chanel),
         loop_angle(Kp1, Ki1, Kd1, output_max1, integral_max1),
         loop_speed(Kp2, Ki2, Kd2, output_max2, integral_max2),
         loop_torque(Kp3,Ki3, Kd3, output_max3, integral_max3)
@@ -177,7 +179,7 @@ bool Motor::adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_att
 void Motor::initADC()
 {
     adc_oneshot_unit_init_cfg_t init_config1 = {
-        .unit_id = ADC_UNIT_1,
+        .unit_id = adc_unit,
     };
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc_handle));
     
@@ -185,10 +187,10 @@ void Motor::initADC()
         .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_8, &config));//gpio9
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_9, &config));//gpio10
-    adc_cali1_enable = adc_calibration_init(ADC_UNIT_1, ADC_CHANNEL_8, ADC_ATTEN_DB_12, &adc_cali1_handle);
-    adc_cali2_enable = adc_calibration_init(ADC_UNIT_1, ADC_CHANNEL_9, ADC_ATTEN_DB_12, &adc_cali2_handle);
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, u_chanel, &config));//gpio9
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, v_chanel, &config));//gpio10
+    adc_cali1_enable = adc_calibration_init(adc_unit, u_chanel, ADC_ATTEN_DB_12, &adc_cali1_handle);
+    adc_cali2_enable = adc_calibration_init(adc_unit, v_chanel, ADC_ATTEN_DB_12, &adc_cali2_handle);
 }
 
 void Motor::setSpeed(float speed) {
@@ -206,26 +208,19 @@ void Motor::update() {
 
 }
 void Motor::debug() {
-    // if(adc_handle == nullptr)
-    // {
-    //     ESP_LOGE("Motor", "adc_handle is null");
-    //     return ;
-    // }
+    if(adc_handle == nullptr)
+    {
+        ESP_LOGE("Motor", "adc_handle is null");
+        return ;
+    }
     
-    // ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_8, &adc_rawdata));
-    // ESP_LOGI("Motor", "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, ADC_CHANNEL_8, adc_rawdata);
-    // if (adc_cali1_enable) {
-    // ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali1_handle, adc_rawdata, &voltage));
-    // ESP_LOGI("Motor", "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, ADC_CHANNEL_8, voltage);
-    // }
+    ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, u_chanel, &adc_rawdata));
+    ESP_LOGI("Motor", "ADC%d Channel[%d] Raw Data: %d", adc_unit + 1, u_chanel, adc_rawdata);
+    if (adc_cali1_enable) {
+    ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali1_handle, adc_rawdata, &voltage));
+    ESP_LOGI("Motor", "ADC%d Channel[%d] Cali Voltage: %d mV", adc_unit + 1, u_chanel, voltage);
+    }
 
-    // 手动设定三相电压（示例：旋转电压矢量）
-    static float test_angle = 0.0f;
-    Ua = sin(test_angle);
-    Ub = sin(test_angle + 2*M_PI/3);
-    Uc = sin(test_angle - 2*M_PI/3);
-    test_angle += 0.1f; // 每次控制周期增加0.1rad
-    applyPWM(Ua, Ub, Uc);
 }
 
 

@@ -28,7 +28,7 @@ public:
     Motor(uint8_t pole_pairs, int8_t direction, float max_voltage,
             int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_c,
             i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin, 
-            
+            adc_unit_t adc_unit, adc_channel_t u_chanel, adc_channel_t v_chanel, 
             float Kp1, float Ki1, float Kd1, float output_max1, float integral_max1,   //angle loop
             float Kp2, float Ki2, float Kd2, float output_max2, float integral_max2,   //speed loop
             float Kp3, float Ki3, float Kd3, float output_max3, float integral_max3    //torque loop
@@ -62,6 +62,8 @@ private:
     gpio_num_t pwm_c;
     mcpwm_cmpr_handle_t comparator_a = NULL, comparator_b = NULL, comparator_c = NULL;
     AS5600 encoder; // AS5600 encoder instance
+    adc_unit_t adc_unit;
+    adc_channel_t u_chanel,v_chanel;
     PIDController loop_angle;
     PIDController loop_speed;
     PIDController loop_torque;
@@ -72,7 +74,7 @@ public:
     float target_torque;
     float target_angle;
     float current_angle = 0.0f;
-    
+
 private:
     float Ua,Ub,Uc;
 
