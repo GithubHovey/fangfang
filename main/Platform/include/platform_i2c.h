@@ -27,15 +27,25 @@ extern "C"
 #if USE_ESP32S3 == 1
 #define PLATFORM_I2C_NUM_0  I2C_NUM_0
 #define PLATFORM_I2C_NUM_1  I2C_NUM_1
+#define PLATFORM_I2C1_SCL_IO   GPIO_NUM_7
+#define PLATFORM_I2C1_SDA_IO   GPIO_NUM_6
+#define PLATFORM_I2C1_CLK_SPEED  100000
 #endif
 
-// typedef enum{
+typedef struct _platform_i2c_dev{
+    i2c_master_dev_handle_t dev_handle;
+}platform_i2c_dev;
 
-// }
 /* Variables -----------------------------------------------------------------*/
 
 
 /* Functions ----------------------------------------------------------------*/
-platform_err_t platform_i2c_init(i2c_port_t port, gpio_num_t sda_io_num, gpio_num_t scl_io_num, uint32_t clk_speed);
+platform_err_t platform_i2c_init(i2c_port_t port);
+
+platform_err_t platform_i2c_register_device(i2c_port_t port, uint8_t dev_addr, platform_i2c_dev *i2c_dev_handle);
+
+platform_err_t platform_i2c_write(platform_i2c_dev *i2c_dev_handle, uint8_t reg, uint8_t *data, size_t size);
+
+platform_err_t platform_i2c_read(platform_i2c_dev *i2c_dev_handle, uint8_t reg ,uint8_t *data, size_t size);
 
 #endif

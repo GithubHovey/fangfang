@@ -101,14 +101,15 @@ static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_att
   * @retval platform_adc_err_t PLATFORM_ADC_OK on success, error code otherwise
   */
 platform_adc_err_t platform_adc_register_channel(adc_unit_t unit, adc_channel_t channel_index, adc_channel_handle *channel,
-  adc_atten_t atten = ADC_ATTEN_DB_12, adc_bitwidth_t bitwidth = ADC_BITWIDTH_DEFAULT
-  )
+  adc_atten_t atten, adc_bitwidth_t bitwidth)
 {
   // 检查参数有效性
   if (adc_handle[unit] != NULL || channel_index >= SOC_ADC_CHANNEL_NUM_MAX || !channel) {
     return PLATFORM_ADC_INVALID_ARG;
   }
-
+  if(platform_adc_init(unit) != PLATFORM_ADC_OK) {
+    return PLATFORM_ADC_ERROR;
+  }
   // 配置通道
   adc_oneshot_chan_cfg_t config = {
   .atten = atten,

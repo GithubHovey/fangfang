@@ -73,7 +73,7 @@ typedef enum {
  * @param mode ADC operation mode (single shot or continuous)
  * @return platform_adc_err_t PLATFORM_ADC_OK on success, error code otherwise
  */
-platform_adc_err_t platform_adc_init(adc_unit_t unit, platform_adc_mode_t mode);
+platform_adc_err_t platform_adc_init(adc_unit_t unit, platform_adc_mode_t mode = PLATFORM_ADC_MODE_SINGLE);
 /**
  * @brief Register an ADC channel
  * @param unit ADC unit (PLATFORM_ADC_1 or PLATFORM_ADC_2)
@@ -82,7 +82,7 @@ platform_adc_err_t platform_adc_init(adc_unit_t unit, platform_adc_mode_t mode);
  * @param bitwidth ADC bit width
  * @return platform_adc_err_t PLATFORM_ADC_OK on success, error code otherwise
  */
-platform_adc_err_t platform_adc_register_channel(adc_unit_t unit, adc_channel_t channel_index, adc_channel_handle *channel,adc_atten_t atten, adc_bitwidth_t bitwidth);
+platform_adc_err_t platform_adc_register_channel(adc_unit_t unit, adc_channel_t channel_index, adc_channel_handle *channel,adc_atten_t atten= ADC_ATTEN_DB_12, adc_bitwidth_t bitwidth=ADC_BITWIDTH_12);
 
 /**
  * @brief Read ADC channel value
@@ -101,7 +101,7 @@ platform_adc_err_t platform_adc_read(adc_unit_t unit, adc_channel_t channel, int
  * @param buffer_size Size of the buffer
  * @return platform_adc_err_t PLATFORM_ADC_OK on success, error code otherwise
  */
-platform_adc_err_t platform_adc_get_voltage(adc_unit_t unit, adc_channel_t channel, int *voltage);
+platform_adc_err_t platform_adc_get_voltage(adc_channel_handle *channel, int *voltage);
 
 /**
  * @brief Free an ADC channel

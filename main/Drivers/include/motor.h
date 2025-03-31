@@ -14,7 +14,7 @@
 
 // #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_prelude.h"
-#include "esp_adc/adc_oneshot.h"
+// #include "esp_adc/adc_oneshot.h"
 #include "as5600.h"
 #define USE_VOFA
 #ifdef USE_VOFA
@@ -27,7 +27,7 @@ class Motor {
 public:
     Motor(uint8_t pole_pairs, int8_t direction, float max_voltage,
             int mcpwm_unit, gpio_num_t pwm_a, gpio_num_t pwm_b, gpio_num_t pwm_c,
-            i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_pin, 
+            i2c_port_t i2c_port, 
             adc_unit_t adc_unit, adc_channel_t u_chanel, adc_channel_t v_chanel, 
             float Kp1, float Ki1, float Kd1, float output_max1, float integral_max1,   //angle loop
             float Kp2, float Ki2, float Kd2, float output_max2, float integral_max2,   //speed loop
@@ -83,11 +83,15 @@ private:
     mcpwm_gen_handle_t generator_a = NULL, generator_b = NULL, generator_c = NULL;
 
     //adc
-    adc_oneshot_unit_handle_t adc_handle = NULL;
-    adc_cali_handle_t adc_cali1_handle = NULL;
-    adc_cali_handle_t adc_cali2_handle = NULL;
-    bool adc_cali1_enable = false;
-    bool adc_cali2_enable = false;
+    // adc_oneshot_unit_handle_t adc_handle = NULL;
+    // adc_cali_handle_t adc_cali1_handle = NULL;
+    // adc_cali_handle_t adc_cali2_handle = NULL;
+    // bool adc_cali1_enable = false;
+    // bool adc_cali2_enable = false;
+    adc_channel_handle u_adc_channel;
+    adc_channel_handle v_adc_channel;
+
+
     int adc_rawdata;
     int voltage;
 
